@@ -190,7 +190,3 @@ text(p$x[,1],p$x[,3],
      col=ptcol)
 
 dev.off()
-
-
-
-

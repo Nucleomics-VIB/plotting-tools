@@ -1,0 +1,1 @@
+asm2cvg.sh -r oxford.fasta.gz -a  ecoli.contigs.fasta -t 8 -w 100 -x ont2d -s

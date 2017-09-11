@@ -6,6 +6,9 @@
 # Stephane Plaisance VIB-BITS September-11-2017 v1.0
 # visit our Git: https://github.com/Nucleomics-VIB
 
+# requirements
+# asm2cvg.sh (ngs-tools) for generating the data for plotting and the plot titles
+
 # dependencies. Please install them if not yet available on your machine
 suppressPackageStartupMessages(library("optparse")); # take care of command-line arguments
 suppressPackageStartupMessages(library("ggplot2")); # nice plots
@@ -19,7 +22,7 @@ option_list <- list(
   make_option(c("-b", "--bedstats"), type="character",
               help="bedtools grouped-by results name [REQUIRED]"),
   make_option(c("-t", "--titles"), type="character",
-              help="fasta headers as titles for the plots [REQUIRED]"),
+              help="fasta headers as titles for the plots [REQUIRED]")
   )
 
 ## parse options
@@ -36,7 +39,7 @@ if( file.access(opt$bedstats) == -1) {
 }
 # check that fasta file exists
 if ( is.null(opt$titles) ) {
-  stop("no reference or assembly fasta file provided, run with --help")
+  stop("no title file provided, run with --help")
 }
 if( file.access(opt$titles) == -1) {
   stop(sprintf("Specified file ( %s ) does not exist", opt$titles))
@@ -46,12 +49,21 @@ if( file.access(opt$titles) == -1) {
 pdf(NULL)
 
 # load data in
-bedtools.data <- read.delim(bedstats, sep="\t", header=FALSE)
-chromosome.titles <- read.delim(titles, sep="\t", header=FALSE, stringsAsFactors=FALSE)$V1
+bedtools.data <- read.delim(opt$bedstats, sep="\t", header=FALSE)
+chromosome.titles <- read.delim(opt$titles, sep="\t", header=FALSE, stringsAsFactors=FALSE)$V1
 colnames(bedtools.data) <- c("seq", "start", "end", "min", "median", "mean", "max")
 
 # list of contigs/chromosomes
 sequences <- as.vector(unique(bedtools.data$seq))
+
+# create output folder
+curfolder=getwd()
+outfolder="coverage_plots"
+output_dir <- file.path(curfolder, outfolder)
+
+if (!dir.exists(output_dir)){
+dir.create(output_dir)
+}
 
 # loop here
 for (seqname in sequences) {
@@ -59,7 +71,7 @@ for (seqname in sequences) {
 oneseq <- subset(bedtools.data, bedtools.data$seq == seqname)
 title <- chromosome.titles[grep(seqname, chromosome.titles, perl=TRUE)]
   
-filename <- paste("coverage_plots/", seqname,"_plots.pdf", sep="")
+filename <- paste(outfolder, "/", seqname,"_plots.pdf", sep="")
 pdf(file=filename)
 
 par(mfrow=c(4,1),

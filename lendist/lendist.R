@@ -26,7 +26,7 @@ if (length(args)==0) {
 file.list <- paste(args, collapse=" ")
 
 # build command
-cmd <- sprintf("cnt=0; cat /dev/null > /tmp/len_info.txt; for f in %s;  do ((cnt++)); %s -c fastx -v id=$cnt -v asm=$(basename $f) \'{print id, asm, $name, length($seq)}\' $f >> /tmp/len_info.txt; done", file.list, bioawk)
+cmd <- sprintf("cnt=0; cat /dev/null > /tmp/len_info.txt; for f in %s;  do cnt=$((cnt+1)); %s -c fastx -v id=$cnt -v asm=$(basename $f) \'{print id, asm, $name, length($seq)}\' $f >> /tmp/len_info.txt; done", file.list, bioawk)
 
 cat("# collecting lengths from file(s)\n")
 
@@ -57,7 +57,7 @@ options(scipen=1000000)
 
 # basis-plot
 p1 <- ggplot(data=data, aes(x=contig.index, y=cumulative.length, group=asm)) +
-  geom_point(aes(shape=asm), size=0.5, col="gray50") +
+  geom_point(aes(shape=asm), size=1, col="gray50") +
   theme(axis.text.x = element_text(colour="grey20",size=8,angle=0,hjust=.5,vjust=.5,face="plain"),
         axis.text.y = element_text(colour="grey20",size=8,angle=0,hjust=1,vjust=0,face="plain"),
         axis.title.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=0,face="plain"),
@@ -79,6 +79,16 @@ p1 +
 p1 +
   labs(title="Cumulative length plot (log-scale)\n", x = "contig index (log10)", y = "cumulative size (Mb)") +
   scale_x_log10()
+
+# add boxplot with contig size distribution
+data$loglength=log(data$length*1000,10)
+formatBack <- function(x) 10^x
+p2 <- ggplot(data=data, aes(asm, loglength), size=0.5)
+p2 + geom_boxplot() + 
+	scale_y_continuous(labels=formatBack) + 
+	coord_flip() +
+	labs(title="Contig size distribution", y="contig / chr size (kbps)", x="") + 
+	theme(axis.text=element_text(size=8), axis.title=element_text(size=10,face="bold"))
 
 close.plots <- dev.off()
 

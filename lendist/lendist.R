@@ -73,11 +73,11 @@ p1 <- ggplot(data=data, aes(x=contig.index, y=cumulative.length, group=asm)) +
 
 # plot linear-scale
 p1 +
-  labs(title="Cumulative length plot\n", x = "contig index", y = "cumulative size (Mb)")
+  labs(title="Cumulative length plot\n", x="contig index", y="cumulative size (Mb)")
 
 # plot log-scale
 p1 +
-  labs(title="Cumulative length plot (log-scale)\n", x = "contig index (log10)", y = "cumulative size (Mb)") +
+  labs(title="Cumulative length plot (log-scale)\n", x="contig index (log10)", y="cumulative size (Mb)") +
   scale_x_log10()
 
 # add boxplot with contig size distribution

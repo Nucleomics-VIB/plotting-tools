@@ -1,9 +1,10 @@
 #!/usr/bin/RScript
 
 # plot coverage per chromosome from bedtools grouped-by data and a list of fasta headers
-# usage: btcvg2plots.R -b <bedtools stats> -t <fasta header list>
+# usage: btcvg2plots.R -b <bedtools stats> -t <fasta header list> -s <stat>
 #
 # Stephane Plaisance VIB-BITS September-11-2017 v1.0
+# version="1.1, 2017_09_19"
 # visit our Git: https://github.com/Nucleomics-VIB
 
 # requirements
@@ -66,7 +67,8 @@ sequences <- as.vector(unique(bedtools.data$seq))
 
 # create output folder
 curfolder=getwd()
-outfolder="coverage_plots"
+subfolder <- basename(gsub("\\..+?\\.titles", "", opt$titles))
+outfolder=paste("coverage_plots", subfolder ,sep="/")
 output_dir <- file.path(curfolder, outfolder)
 
 if (!dir.exists(output_dir)){
@@ -115,7 +117,7 @@ par(mfrow=c(1,1),
 cex=1; #0.3
 
 plot.data <- data.frame(x=oneseq$start+(oneseq$end-oneseq$start)/2, y=oneseq[,plotstat])
-lw1 <- loess(y ~ x,data=plot.data)
+suppressWarnings(lw1 <- loess(y ~ x,data=plot.data))
 
 plot(plot.data$x, plot.data$y,
      log="y",
@@ -134,5 +136,31 @@ page.title <- paste("Coverage plots for ", title, sep="")
 page.title <- paste(strwrap(page.title,80), collapse="\n")
 mtext(page.title, outer=TRUE,  cex=0.75, line=-1.5)
 }
-dev.off()
+done <- dev.off()
 }
+
+# plot coverage stats across all contigs
+filename <- paste(outfolder, "/", subfolder, "-coverage_depth.pdf", sep="")
+pdf(file=filename)
+
+par(mfrow=c(1,1),
+	oma = c(2,2,3,1) + 0.1,
+	mar = c(4,4,2,1) + 0.1)
+cex=1; #0.3
+
+max=4*quantile(bedtools.data[,plotstat], 0.75)
+hist(bedtools.data[,plotstat], 
+	xlim=c(0,max), 
+	breaks=max,
+     main = "",
+     xlab = "",
+     ylab = "number of windows at a given depth",
+     cex=cex,
+     col = 'gray')
+
+# add title for the page
+page.title <- paste("Coverage depth distribution for ", subfolder, sep="")
+page.title <- paste(strwrap(page.title,80), collapse="\n")
+mtext(page.title, outer=TRUE,  cex=0.75, line=-1.5)
+
+done <- dev.off()

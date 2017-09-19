@@ -87,7 +87,7 @@ if (plotstat=="all") {
 par(mfrow=c(4,1),
 	oma = c(2,2,3,1) + 0.1,
 	mar = c(4,4,2,1) + 0.1)
-cex=0.3
+cex=0.5
 
 for (onestat in c("min", "mean", "median", "max")) {
 plot(oneseq[,onestat],

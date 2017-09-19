@@ -20,16 +20,16 @@ suppressPackageStartupMessages(library("ggplot2")); # nice plots
 # parameters
 option_list <- list(
   make_option(c("-b", "--bedstats"), type="character",
-              help="bedtools grouped-by results name [REQUIRED]"),
+			  help="bedtools grouped-by results name [REQUIRED]"),
   make_option(c("-t", "--titles"), type="character",
-              help="fasta headers as titles for the plots [REQUIRED]"),
+			  help="fasta headers as titles for the plots [REQUIRED]"),
   make_option(c("-s", "--stat"), type="character",
-              help="stat to be used for the plots [min, mean, median, max, all | all])")
+			  help="stat to be used for the plots [min, mean, median, max, all | all])")
   )
 
 ## parse options
 opt <- parse_args(OptionParser(usage = "%prog [options] file",
-                               option_list=option_list, add_help_option = TRUE))
+							   option_list=option_list, add_help_option = TRUE))
 
 # check if arguments provided
 # check that bam file exists
@@ -85,8 +85,8 @@ pdf(file=filename)
 if (plotstat=="all") {
 
 par(mfrow=c(4,1),
-    oma = c(2,2,3,1) + 0.1,
-    mar = c(4,4,2,1) + 0.1)
+	oma = c(2,2,3,1) + 0.1,
+	mar = c(4,4,2,1) + 0.1)
 cex=0.3
 
 for (onestat in c("min", "mean", "median", "max")) {
@@ -108,13 +108,16 @@ mtext(page.title, outer=TRUE,  cex=0.75, line=-1.5)
 
 } else {
 
-# one plot only
+# one plot only with loess line
 par(mfrow=c(1,1),
-    oma = c(2,2,3,1) + 0.1,
-    mar = c(4,4,2,1) + 0.1)
-cex=0.3
+	oma = c(2,2,3,1) + 0.1,
+	mar = c(4,4,2,1) + 0.1)
+cex=1; #0.3
 
-plot(oneseq[,plotstat],
+plot.data <- data.frame(x=oneseq$start+(oneseq$end-oneseq$start)/2, y=oneseq[,plotstat])
+lw1 <- loess(y ~ x,data=plot.data)
+
+plot(plot.data$x, plot.data$y,
      log="y",
      main = "",
      xlab = "",
@@ -123,7 +126,9 @@ plot(oneseq[,plotstat],
      pch=20,
      cex=cex,
      col = 'blue')
-     
+j <- order(plot.data$x)
+lines(plot.data$x[j],lw1$fitted[j], col="red", lwd=3)
+
 # add title for the page
 page.title <- paste("Coverage plots for ", title, sep="")
 page.title <- paste(strwrap(page.title,80), collapse="\n")

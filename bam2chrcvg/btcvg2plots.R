@@ -22,7 +22,9 @@ option_list <- list(
   make_option(c("-b", "--bedstats"), type="character",
               help="bedtools grouped-by results name [REQUIRED]"),
   make_option(c("-t", "--titles"), type="character",
-              help="fasta headers as titles for the plots [REQUIRED]")
+              help="fasta headers as titles for the plots [REQUIRED]"),
+  make_option(c("-s", "--stat"), type="character",
+              help="stat to be used for the plots [min, mean, median, max, all | all])")
   )
 
 ## parse options
@@ -43,6 +45,12 @@ if ( is.null(opt$titles) ) {
 }
 if( file.access(opt$titles) == -1) {
   stop(sprintf("Specified file ( %s ) does not exist", opt$titles))
+}
+
+if ( is.null(opt$stat) ) {
+	plotstat <- "all"
+} else {
+	plotstat <- opt$stat
 }
 
 # prevent Rplot.pdf creation
@@ -69,60 +77,57 @@ dir.create(output_dir)
 for (seqname in sequences) {
 
 oneseq <- subset(bedtools.data, bedtools.data$seq == seqname)
-title <- chromosome.titles[grep(seqname, chromosome.titles, perl=TRUE)]
+title <- chromosome.titles[grep(seqname, chromosome.titles, fixed=TRUE)]
   
 filename <- paste(outfolder, "/", seqname,"_plots.pdf", sep="")
 pdf(file=filename)
+
+if (plotstat=="all") {
 
 par(mfrow=c(4,1),
     oma = c(2,2,3,1) + 0.1,
     mar = c(4,4,2,1) + 0.1)
 cex=0.3
 
-plot(oneseq$min,
-     log="y",
-     main = "",
-     xlab = "",
-     ylab = "min-coverage (log10)",
-     type="p",
-     pch=20,
-     cex=cex,
-     col = 'blue')
-
-plot(oneseq$median,
-     log="y",
-     main = "",
-     xlab = "",
-     ylab = "median-coverage (log10)",
-     type="p",
-     pch=20,
-     cex=cex,
-     col = 'blue')
-
-plot(oneseq$mean,
-     log="y",
-     main = "",
-     xlab = "",
-     ylab = "mean-coverage (log10)",
-     type="p",
-     pch=20,
-     cex=cex,
-     col = 'blue')
-
-plot(oneseq$max,
-     log="y",
-     main = NULL,
-     xlab = paste(seqname, " (kb)", sep=""),
-     ylab = "max-coverage (log10)",
-     type="p",
-     pch=20,
-     cex=cex,
-     col = 'blue')
+for (onestat in c("min", "mean", "median", "max")) {
+plot(oneseq[,onestat],
+	 log="y",
+	 main = "",
+	 xlab = "",
+	 ylab = paste(onestat,"-coverage (log10)",sep=""),
+	 type="p",
+	 pch=20,
+	 cex=cex,
+	 col = 'blue')
+}
 
 # add title for the page
 page.title <- paste("Coverage plots for ", title, sep="")
 page.title <- paste(strwrap(page.title,80), collapse="\n")
 mtext(page.title, outer=TRUE,  cex=0.75, line=-1.5)
 
+} else {
+
+# one plot only
+par(mfrow=c(1,1),
+    oma = c(2,2,3,1) + 0.1,
+    mar = c(4,4,2,1) + 0.1)
+cex=0.3
+
+plot(oneseq[,plotstat],
+     log="y",
+     main = "",
+     xlab = "",
+     ylab = paste(plotstat,"-coverage (log10)",sep=""),
+     type="p",
+     pch=20,
+     cex=cex,
+     col = 'blue')
+     
+# add title for the page
+page.title <- paste("Coverage plots for ", title, sep="")
+page.title <- paste(strwrap(page.title,80), collapse="\n")
+mtext(page.title, outer=TRUE,  cex=0.75, line=-1.5)
+}
 dev.off()
 }

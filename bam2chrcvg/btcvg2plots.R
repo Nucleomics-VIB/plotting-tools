@@ -13,6 +13,7 @@
 # dependencies. Please install them if not yet available on your machine
 suppressPackageStartupMessages(library("optparse")); # take care of command-line arguments
 suppressPackageStartupMessages(library("ggplot2")); # nice plots
+suppressPackageStartupMessages(library("gplots")); #1 table on plot
 
 #####################################
 ### Handle COMMAND LINE arguments ###
@@ -68,11 +69,11 @@ sequences <- as.vector(unique(bedtools.data$seq))
 # create output folder
 curfolder=getwd()
 subfolder <- basename(gsub("\\..+?\\.titles", "", opt$titles))
-outfolder=paste("coverage_plots", subfolder ,sep="/")
+outfolder=paste("coverage_plots", subfolder ,sep="-")
 output_dir <- file.path(curfolder, outfolder)
 
 if (!dir.exists(output_dir)){
-dir.create(output_dir)
+dir.create(output_dir, recursive=TRUE)
 }
 
 # loop here
@@ -95,7 +96,7 @@ for (onestat in c("min", "mean", "median", "max")) {
 plot(oneseq[,onestat],
 	 log="y",
 	 main = "",
-	 xlab = "",
+	 xlab = "window index",
 	 ylab = paste(onestat,"-coverage (log10)",sep=""),
 	 type="p",
 	 pch=20,
@@ -120,14 +121,14 @@ plot.data <- data.frame(x=oneseq$start+(oneseq$end-oneseq$start)/2, y=oneseq[,pl
 suppressWarnings(lw1 <- loess(y ~ x,data=plot.data))
 
 plot(plot.data$x, plot.data$y,
-     log="y",
-     main = "",
-     xlab = "",
-     ylab = paste(plotstat,"-coverage (log10)",sep=""),
-     type="p",
-     pch=20,
-     cex=cex,
-     col = 'blue')
+	log="y",
+	main = "",
+	xlab = "window index",
+	ylab = paste(plotstat,"-coverage (log10)",sep=""),
+	type="p",
+	pch=20,
+	cex=cex,
+	col = 'blue')
 j <- order(plot.data$x)
 lines(plot.data$x[j],lw1$fitted[j], col="red", lwd=3)
 
@@ -143,8 +144,7 @@ done <- dev.off()
 filename <- paste(outfolder, "/", subfolder, "-coverage_depth.pdf", sep="")
 pdf(file=filename)
 
-par(mfrow=c(1,1),
-	oma = c(2,2,3,1) + 0.1,
+par(oma = c(2,2,3,1) + 0.1,
 	mar = c(4,4,2,1) + 0.1)
 cex=1; #0.3
 
@@ -152,11 +152,27 @@ max=4*quantile(bedtools.data[,plotstat], 0.75)
 hist(bedtools.data[,plotstat], 
 	xlim=c(0,max), 
 	breaks=max,
-     main = "",
-     xlab = "",
-     ylab = "number of windows at a given depth",
-     cex=cex,
-     col = 'gray')
+	main = "",
+	xlab = "coverage depth",
+	ylab = "number of windows at a given depth",
+	cex=cex,
+	col = 'gray')
+
+# customize quantiles
+p <- c(0, 5, 25, 50, 75, 95, 100)/100
+qt <- round( quantile(bedtools.data[,plotstat],
+	probs = p,
+	na.rm = FALSE,
+	names = TRUE,
+	type = 7),
+	3 )
+
+sum.table <- data.frame(q=paste(100*p,"%",sep=''), coverage=qt)
+
+# overlay summary
+par(new=TRUE)
+
+textplot(sum.table, halign="right", valign="top", cex=1, show.rownames=FALSE, show.colnames=TRUE)
 
 # add title for the page
 page.title <- paste("Coverage depth distribution for ", subfolder, sep="")

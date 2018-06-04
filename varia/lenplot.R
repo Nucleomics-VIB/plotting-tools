@@ -25,6 +25,24 @@ if (length(args)==0) {
 infile <- args[1]
 base <- basename(infile)
 
+# compute XNXX function
+Nvalue <- function(lim, x, na.rm = TRUE) {
+  # handle NA values
+  if(isTRUE(na.rm)){
+    x <- x[!is.na(x)]
+    }
+  cutval <- 100/lim
+  # compute LXX and NXX
+  sorted <- sort(x, decreasing = TRUE)
+  SXX <- sum(x)/cutval
+  csum <- cumsum(sorted)
+  GTLXX <- as.vector(csum >= SXX)
+  LXX=min(which(GTLXX == TRUE))
+  NXX <- round(sorted[LXX], 1)
+  # eg: get NXX with lst['NXX']
+  NXX
+  }
+
 # build command
 cmd <- sprintf("%s -c fastx \'{print $name, length($seq)}\' \'%s\' > /tmp/sizes.txt", bioawk, infile)
 
@@ -63,9 +81,9 @@ ggplot(data, aes(x=len)) +
   scale_x_continuous(limits=c(0,maxplot)) +
   geom_vline(aes(xintercept=mean(len, na.rm=T)),   # Ignore NA values for mean
              color="red", linetype="dotted", size=0.8) +
-  geom_vline(aes(xintercept=median(len, na.rm=T)),   # Ignore NA values for median
+  geom_vline(aes(xintercept=Nvalue(50, selection$len)),   # Ignore NA values for median
              color="blue", linetype="dotted", size=0.8) +
-  labs(title="", x="Sequence size distribution (bps) [mean=red, median=blue]", y="count")
+  labs(title="", x="Sequence size distribution (bps) [mean=red, N50=blue]", y="count")
 
 close.plots <- dev.off()
 

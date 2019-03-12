@@ -26,7 +26,7 @@ if (length(args)==0) {
 file.list <- paste(args, collapse=" ")
 
 # build command
-cmd <- sprintf("cnt=0; cat /dev/null > /tmp/len_info.txt; for f in %s;  do cnt=$((cnt+1)); %s -c fastx -v id=$cnt -v asm=$(basename $f) \'{print id, asm, $name, length($seq)}\' $f >> /tmp/len_info.txt; done", file.list, bioawk)
+cmd <- sprintf("cnt=0; cat /dev/null > /tmp/len_info.txt; for f in %s; do cnt=$((cnt+1)); %s -c fastx -v id=$cnt -v asm=$(basename $f) \'{print id, asm, $name, length($seq)}\' $f >> /tmp/len_info.txt; done", file.list, bioawk)
 
 cat("# collecting lengths from file(s)\n")
 

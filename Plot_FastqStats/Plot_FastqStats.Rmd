@@ -104,7 +104,7 @@ data <- read_delim("data/counts.txt",
 
 ```
 
-The read file **`r basename(infile)`** (`r formatC(nrow(data), big.mark="'")` reads) was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
+The read file **`r basename(infile)`** (`r formatC(nrow(data), big.mark="'")` reads; `r formatC(sum(data$Len)/1000000, big.mark="'")` Mbps) was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
 
 ## Data metric summary
 

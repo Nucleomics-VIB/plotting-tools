@@ -85,7 +85,11 @@ function getstats ()
 if [ $# == 1 ]; then
   name=$(basename $1)
   mkdir -p data pictures
+  if [ ${file: -3} == ".gz" ]; then
   zcat $1 | bioawk -c fastx -v varn=${name} 'BEGIN{FS="\t"; OFS="\t"; print "Name","Len","GC%","meanQ"}{print varn,length($seq),gc($seq),meanqual($qual)}' > data/counts.txt;
+  else
+  cat $1 | bioawk -c fastx -v varn=${name} 'BEGIN{FS="\t"; OFS="\t"; print "Name","Len","GC%","meanQ"}{print varn,length($seq),gc($seq),meanqual($qual)}' > data/counts.txt;
+  fi
  else
      echo "# give a fastq.gz file as argument";
      return;
@@ -183,7 +187,7 @@ null <- dev.off()
 
 \end{center}
 
-The N50 length measured on this dataset is **`r n50length`**
+The N50 length measured on this dataset is **`r format(n50length, scientific = FALSE)`**
 
 \begin{center}
 

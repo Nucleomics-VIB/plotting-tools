@@ -1,9 +1,8 @@
 ---
-title: Long-Reads FastQ QC plots
-author: for *`r basename(infile)`* ^[SP@VIB - Nucleomics Core, nucleomics@vib.be]
+title: "Long-Reads FastQ QC plots"
+author: "for *`r basename(infile)`* ^[SP@VIB - Nucleomics Core, nucleomics@vib.be]"
 fontsize: 10pt
 geometry: top=1cm, bottom=1cm, left=2.5cm, right=1.5cm, includeheadfoot=true
-papersize: a4paper
 output:
     fig_caption: no
 includes:  
@@ -30,8 +29,7 @@ opts_chunk$set(error=FALSE,
                warning=FALSE, 
                eval=TRUE,
                echo=FALSE,
-               include=FALSE,
-               results = "hide",
+               include=TRUE,
                fig.cap=".",
                fig.show="asis",
                fig.keep="high",
@@ -77,10 +75,7 @@ Nvalue <- function(lim, x, na.rm = TRUE){
 }
 ```
 
-## Compute read statistics
-
 The read file **`r basename(infile)`** was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
-
 
 ```{bash, echo=FALSE, include=FALSE, results='hide'}
 
@@ -101,11 +96,22 @@ if [ $# == 1 ]; then
 getstats $infile
 ```
 
+## Data metric summary
+
 ```{r load data, echo=FALSE}
 
 # load data
 data <- read_delim("data/counts.txt", 
     "\t", escape_double = FALSE, trim_ws = TRUE)
+
+# get summary
+sum <- summary(data)[,2:4]
+sum <- gsub("(^.*):(.*) ( +$)","\\2", sum, perl = TRUE)
+sum[,2] <- round(100*as.numeric(sum[,2]),2)
+sum[,3] <- round(as.numeric(sum[,3]),2)
+colnames(sum) <- gsub("^ +(*) +$","\\1",colnames(sum))
+rownames(sum) <- c("min", "25%", "median", "mean", "75%", "max")
+kable(sum, format = "markdown", digits=2)
 ```
 
 ## Histograms
@@ -166,8 +172,8 @@ null <- dev.off()
 
 \begin{center}
 
-\includegraphics[width=200pt]{pictures/plot_histogram1.png}
-\includegraphics[width=200pt]{pictures/plot_histogram2.png}
+\includegraphics[width=150pt]{pictures/plot_histogram1.png}
+\includegraphics[width=150pt]{pictures/plot_histogram2.png}
 
 \end{center}
 
@@ -175,8 +181,8 @@ The N50 length measured on this dataset is **`r n50length`**
 
 \begin{center}
 
-\includegraphics[width=200pt]{pictures/plot_histogram3.png}
-\includegraphics[width=200pt]{pictures/empty.png}
+\includegraphics[width=150pt]{pictures/plot_histogram3.png}
+\includegraphics[width=150pt]{pictures/empty.png}
 
 \end{center}
 

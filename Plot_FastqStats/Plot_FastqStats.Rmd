@@ -89,6 +89,7 @@ function getstats ()
 {
 if [ $# == 1 ]; then
   name=$(basename $1)
+  mkdir -p data pictures
   zcat $1 | bioawk -c fastx -v varn=${name} 'BEGIN{FS="\t"; OFS="\t"; print "Name","Len","GC%","meanQ"}{print varn,length($seq),gc($seq),meanqual($qual)}' > data/counts.txt;
  else
      echo "# give a fastq.gz file as argument";

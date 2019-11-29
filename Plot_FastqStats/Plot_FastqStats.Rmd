@@ -11,6 +11,10 @@ includes:
 
 ```{r setup, include=FALSE}
 
+# requires bioawk and R packages loaded below
+# author: "Stéphane Plaisance, Nucleomics Core"
+# date: "2019_11_29; v1.0"
+
 # call with:
 # R --slave -e "infile='<path/to/fastq.gz>'; rmarkdown::render('Plot_FastqStats.Rmd', 'pdf_document',  output_file='your_title.pdf', quiet=TRUE)" 
 # also works with 'html_document'
@@ -33,8 +37,6 @@ opts_chunk$set(error=FALSE,
                fig.cap=".",
                fig.show="asis",
                fig.keep="high",
-               fig.width=3,
-               fig.hight=3,
                cache=FALSE,
                comment=NA,
                progress = FALSE, 
@@ -75,8 +77,6 @@ Nvalue <- function(lim, x, na.rm = TRUE){
 }
 ```
 
-The read file **`r basename(infile)`** was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
-
 ```{bash, echo=FALSE, include=FALSE, results='hide'}
 
 # declare a custom bash function
@@ -96,13 +96,19 @@ if [ $# == 1 ]; then
 getstats $infile
 ```
 
-## Data metric summary
-
 ```{r load data, echo=FALSE}
 
 # load data
 data <- read_delim("data/counts.txt", 
     "\t", escape_double = FALSE, trim_ws = TRUE)
+
+```
+
+The read file **`r basename(infile)`** (`r formatC(nrow(data), big.mark="'")` reads) was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
+
+## Data metric summary
+
+```{r get summary, echo=FALSE}
 
 # get summary
 sum <- summary(data)[,2:4]
@@ -129,7 +135,7 @@ lendist <- ggplot(data, aes(x = Len)) +
   xlab(paste("read length distribution (cut at ", lenlims[2]/1000, "kb)", sep=""))
 
 # print without warnings
-png(filename="pictures/plot_histogram1.png", width=400, height=400, units = "px")
+png(filename="pictures/plot_histogram1.png", width=400, height=300, units = "px")
 suppressWarnings(print(lendist))
 null <- dev.off()
 ```
@@ -143,12 +149,12 @@ gcdist <- ggplot(data, aes(x = `GC%`)) +
   xlab("read GC%")
 
 # print without warnings
-png(filename="pictures/plot_histogram2.png", width=400, height=400, units = "px")
+png(filename="pictures/plot_histogram2.png", width=400, height=300, units = "px")
 suppressWarnings(print(gcdist))
 null <- dev.off()
 
 # empty plot
-png(filename="pictures/empty.png", width=400, height=400, units = "px")
+png(filename="pictures/empty.png", width=400, height=300, units = "px")
 plot(0,type='n',axes=FALSE,ann=FALSE)
 null <- dev.off()
 ```
@@ -165,15 +171,15 @@ qualdist <- ggplot(data, aes(x = meanQ)) +
   xlab(paste("read mean basecall qualities (cut at ", qualims[2], ")", sep=""))
 
 # print without warnings
-png(filename="pictures/plot_histogram3.png", width=400, height=400, units = "px")
+png(filename="pictures/plot_histogram3.png", width=400, height=300, units = "px")
 suppressWarnings(print(qualdist))
 null <- dev.off()
 ```
 
 \begin{center}
 
-\includegraphics[width=150pt]{pictures/plot_histogram1.png}
-\includegraphics[width=150pt]{pictures/plot_histogram2.png}
+\includegraphics[width=200pt]{pictures/plot_histogram1.png}
+\includegraphics[width=200pt]{pictures/plot_histogram2.png}
 
 \end{center}
 
@@ -181,8 +187,8 @@ The N50 length measured on this dataset is **`r n50length`**
 
 \begin{center}
 
-\includegraphics[width=150pt]{pictures/plot_histogram3.png}
-\includegraphics[width=150pt]{pictures/empty.png}
+\includegraphics[width=200pt]{pictures/plot_histogram3.png}
+\includegraphics[width=200pt]{pictures/empty.png}
 
 \end{center}
 

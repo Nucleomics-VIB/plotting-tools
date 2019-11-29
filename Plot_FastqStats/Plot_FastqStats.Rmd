@@ -1,0 +1,258 @@
+---
+title: Long-Reads FastQ QC plots
+author: for *`r basename(infile)`* ^[SP@VIB - Nucleomics Core, nucleomics@vib.be]
+fontsize: 10pt
+geometry: top=1cm, bottom=1cm, left=2.5cm, right=1.5cm, includeheadfoot=true
+papersize: a4paper
+output:
+    fig_caption: no
+includes:  
+    in_header: Static/preamble.tex
+---
+
+```{r setup, include=FALSE}
+
+# call with:
+# R --slave -e "infile='<path/to/fastq.gz>'; rmarkdown::render('Plot_FastqStats.Rmd', 'pdf_document',  output_file='your_title.pdf', quiet=TRUE)" 
+# also works with 'html_document'
+
+# set default parameters [echo=TRUE to include code]
+# general
+library("knitr")
+library("yaml")
+library("readr")
+library("ggplot2")
+library("ggpubr")
+library("RColorBrewer")
+
+opts_chunk$set(error=FALSE,
+               message=FALSE, 
+               warning=FALSE, 
+               eval=TRUE,
+               echo=FALSE,
+               include=FALSE,
+               results = "hide",
+               fig.cap=".",
+               fig.show="asis",
+               fig.keep="high",
+               fig.width=3,
+               fig.hight=3,
+               cache=FALSE,
+               comment=NA,
+               progress = FALSE, 
+               verbose = FALSE)
+```
+
+```{r configure, echo=FALSE}
+# read parameters from yaml file
+config <- yaml.load_file("config.yaml")
+
+# die if infile not provided or not found
+if (! file.exists(infile)) stop("# call with: # R --slave -e \"infile=\'<path/to/fastq.gz>\'; rmarkdown::render(\'Plot_FastqStats.Rmd\', \'pdf_document\',  output_file=\'your_title.pdf\', quiet=TRUE)\" ")
+
+#Sys.setenv(infile = config$infile) # alt: read file path from config.yaml
+Sys.setenv(infile = infile)
+lenlims <- c(config$lenmin, config$lenmax) #=c(0,30000)
+gclims <- c(config$gcmin, config$gcmax) #=c(0,1)
+qualims <- c(config$qualmin, config$qualmax) #=c(0,20)
+
+# use simple theme
+theme_set(theme_pubclean())
+
+Nvalue <- function(lim, x, na.rm = TRUE){
+  # handle NA values
+  if(isTRUE(na.rm)){
+    x <- x[!is.na(x)]
+  }
+  cutval <- 100/lim
+  # compute LXX and NXX
+  sorted <- sort(x, decreasing = TRUE)
+  SXX <- sum(x)/cutval
+  csum <- cumsum(sorted)
+  GTLXX <- as.vector(csum >= SXX)
+  LXX=min(which(GTLXX == TRUE))
+  NXX <- round(sorted[LXX], 1)
+  # eg: get NXX with lst['NXX']
+  NXX
+}
+```
+
+## Compute read statistics
+
+The read file **`r basename(infile)`** was parsed for read Length, meanQuality and GC% used to plot below. Stats data were used to plot histograms for single metrics and density plots for pairs of metrics.
+
+
+```{bash, echo=FALSE, include=FALSE, results='hide'}
+
+# declare a custom bash function
+function getstats ()
+{
+if [ $# == 1 ]; then
+  name=$(basename $1)
+  zcat $1 | bioawk -c fastx -v varn=${name} 'BEGIN{FS="\t"; OFS="\t"; print "Name","Len","GC%","meanQ"}{print varn,length($seq),gc($seq),meanqual($qual)}' > data/counts.txt;
+ else
+     echo "# give a fastq.gz file as argument";
+     return;
+ fi
+}
+
+# apply the function to a fastq.gz input file
+getstats $infile
+```
+
+```{r load data, echo=FALSE}
+
+# load data
+data <- read_delim("data/counts.txt", 
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+## Histograms
+
+```{r plot_histogram1, echo=FALSE}
+
+# lengths
+n50length <- Nvalue(50,data$Len)
+
+#  geom_histogram(aes(y = ..density..), bins=100, colour="black", fill="white") +
+lendist <- ggplot(data, aes(x = Len)) +
+  geom_density(alpha = 0.2, fill = "#FF6666", size=0.2) +
+  geom_vline(aes(xintercept=n50length), color="gold3", linetype="twodash", size=1) +
+  xlim(lenlims) +
+  xlab(paste("read length distribution (cut at ", lenlims[2]/1000, "kb)", sep=""))
+
+# print without warnings
+png(filename="pictures/plot_histogram1.png", width=400, height=400, units = "px")
+suppressWarnings(print(lendist))
+null <- dev.off()
+```
+
+```{r plot_histograms2, echo=FALSE}
+
+# GC%
+gcdist <- ggplot(data, aes(x = `GC%`)) +
+  geom_density(alpha = 0.2, fill = "#FF6666", size=0.2) +
+  xlim(gclims) +
+  xlab("read GC%")
+
+# print without warnings
+png(filename="pictures/plot_histogram2.png", width=400, height=400, units = "px")
+suppressWarnings(print(gcdist))
+null <- dev.off()
+
+# empty plot
+png(filename="pictures/empty.png", width=400, height=400, units = "px")
+plot(0,type='n',axes=FALSE,ann=FALSE)
+null <- dev.off()
+```
+
+```{r plot_histograms3, echo=FALSE}
+
+# meanquals
+n50meanQ <- Nvalue(50,data$meanQ)
+
+qualdist <- ggplot(data, aes(x = meanQ)) +
+  geom_density(alpha = 0.2, fill = "#FF6666", size=0.2) +
+  geom_vline(aes(xintercept=n50meanQ), color="gold3", linetype="twodash", size=1) +
+  xlim(qualims) +
+  xlab(paste("read mean basecall qualities (cut at ", qualims[2], ")", sep=""))
+
+# print without warnings
+png(filename="pictures/plot_histogram3.png", width=400, height=400, units = "px")
+suppressWarnings(print(qualdist))
+null <- dev.off()
+```
+
+\begin{center}
+
+\includegraphics[width=200pt]{pictures/plot_histogram1.png}
+\includegraphics[width=200pt]{pictures/plot_histogram2.png}
+
+\end{center}
+
+The N50 length measured on this dataset is **`r n50length`**
+
+\begin{center}
+
+\includegraphics[width=200pt]{pictures/plot_histogram3.png}
+\includegraphics[width=200pt]{pictures/empty.png}
+
+\end{center}
+
+The meanQ of the dataset has a N50 value of **`r n50meanQ`**
+
+## Pairwise Plots
+
+```{r plot_GCvsLen, echo=FALSE}
+
+gclendist <- ggplot(data, aes(x = Len, y = `GC%`)) +
+  geom_hex(bins = 100) +
+  scale_fill_continuous(type = "viridis") +
+  xlim(lenlims) +
+  ylim(gclims) +
+  theme_bw() +
+  theme(legend.position='none')
+
+# print without warnings
+png(filename="pictures/plot_gclendist.png", width=400, height=400, units = "px")
+suppressWarnings(print(gclendist))
+null <- dev.off()
+```
+
+```{r plot_meanQvsLen, echo=FALSE}
+
+# meanQ vs Len
+meanQlendist <- ggplot(data, aes(x = Len, y = meanQ)) +
+  geom_hex(bins = 100) +
+  scale_fill_continuous(type = "viridis") +
+  xlim(lenlims) +
+  ylim(qualims) +
+  theme_bw() +
+  theme(legend.position='none')
+
+# print without warnings
+png(filename="pictures/plot_meanQlendist.png", width=400, height=400, units = "px")
+suppressWarnings(print(meanQlendist))
+null <- dev.off()
+```
+
+```{r plot_GCvsmeanQ, echo=FALSE}
+
+# GC% vs meanQ
+gcmeanQdist <- ggplot(data, aes(x = meanQ, y = `GC%`)) +
+  geom_hex(bins = 100) +
+  scale_fill_continuous(type = "viridis") +
+  xlim(qualims) +
+  ylim(gclims) +
+  theme_bw() +
+  theme(legend.position='none')
+
+# print without warnings
+png(filename="pictures/plot_gcmeanQdist.png", width=400, height=400, units = "px")
+suppressWarnings(print(gcmeanQdist))
+null <- dev.off()
+```
+
+\begin{center}
+
+\includegraphics[width=200pt]{pictures/plot_gclendist.png}
+\includegraphics[width=200pt]{pictures/plot_meanQlendist.png}
+
+\includegraphics[width=200pt]{pictures/plot_gcmeanQdist.png}
+\includegraphics[width=200pt]{pictures/empty.png}
+
+\end{center}
+
+\bigskip
+
+\bigskip
+
+\bigskip
+
+*`r Sys.Date()`*
+
+![logo](Static/Images/NC_logo.png) more at **<http://www.nucleomics.be>**
+
+\newpage
+
+\footnotesize

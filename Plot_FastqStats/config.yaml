@@ -1,7 +1,7 @@
 # plotting limits
 lenmin: 0
-lenmax: 30000
+lenmax: 5000
 gcmin: 0
 gcmax: 1
 qualmin: 0
-qualmax: 20
+qualmax: 40

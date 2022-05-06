@@ -4,4 +4,4 @@ lenmax: 5000
 gcmin: 0
 gcmax: 1
 qualmin: 0
-qualmax: 40
+qualmax: 70

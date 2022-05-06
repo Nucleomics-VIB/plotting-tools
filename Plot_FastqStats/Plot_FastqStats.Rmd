@@ -5,6 +5,7 @@ fontsize: 10pt
 geometry: top=1cm, bottom=1cm, left=2.5cm, right=1.5cm, includeheadfoot=true
 output:
     fig_caption: no
+classoption: a4paper
 includes:  
     in_header: Static/preamble.tex
 ---
@@ -104,7 +105,10 @@ getstats $infile
 
 # load data
 data <- read_delim("data/counts.txt", 
-    "\t", escape_double = FALSE, trim_ws = TRUE)
+    "\t", 
+    escape_double = FALSE, 
+    trim_ws = TRUE, 
+    show_col_types = FALSE)
 
 ```
 

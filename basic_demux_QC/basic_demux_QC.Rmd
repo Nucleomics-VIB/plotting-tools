@@ -1,0 +1,174 @@
+---
+title: "Read count deviation from samples of an equimolar multiplexed library"
+author: "VIB Nucleomics Core"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# script: basic_demux_QC.Rmd
+# SP@NC; 2023-07-13 v1.0
+# find the latest version at 
+library("knitr")
+library("readr")
+library("ggplot2")
+library("gridExtra")
+
+workdir <- getwd()
+knitr::opts_chunk$set(message=FALSE, 
+               warning=FALSE, 
+               eval=TRUE,
+               echo=FALSE,
+               include=TRUE,
+               fig.cap="",
+               fig.show="asis",
+               fig.keep="high",
+               cache=FALSE,
+               comment=NA,
+               root.dir=workdir)
+options(scipen=999)
+setwd(workdir)
+
+```
+
+\footnotesize
+
+$`r format(Sys.time(), "%a %b %d, %Y")`$
+
+\normalsize
+
+\bigskip
+
+```{r load data, eval=TRUE}
+# QC of multiplexed equimolar Novaseq runs
+
+# analyse read counts in each sample after demultiplexing
+# the expectation is that all samples get the same count because they were pooled equimolarly
+
+# calculate the deviation of the counts as compared to the median/mean of all samples
+# plot relative distribution of counts deviations
+
+#infile="4489_4497_230605_A01044_0331_AH2M5CDSX7-poolingQC-FinalTable.csv"
+infile="4490_230627_A01044_0335_AH2M7CDSX7-poolingQC-FinalTable.csv"     
+#infile="4531_230627_A01044_0334_BH2M7KDSX7-poolingQC-FinalTable.csv"     
+
+rawdata <- read_csv(infile, show_col_types = FALSE)
+
+# subset one project
+
+expnum=4490
+data <- subset(rawdata, rawdata$Project == expnum)
+
+# choose centering method
+#center="median"
+center="mean"
+
+cat(paste("Input file: ",infile))
+cat(paste("Experiment: ", expnum))
+cat(paste("Centering on the", center))
+```
+
+```{r process counts, eval=TRUE, fig.width=6, fig.height=4.5}
+
+
+if ( center == "median" ){
+# based on median
+median_count <- median(data$Total)
+data$Count_diff_med <- data$Total - median_count
+data$Percentage_diff_median <- (data$Count_diff_med / median_count) * 100
+mean_diff_median <- round(100*sum(abs(data$Count_diff_med))/sum(data$Total),2)
+
+# Create a barplot using ggplot2
+bar_plot <- ggplot(data, aes(x = Sample, y = Total)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = NULL, y = "Total read counts") +
+  ggtitle("A") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_flip(ylim = c(0, max(data$Total)))
+
+# Create a boxplot using ggplot2
+box_plot <- ggplot(data, aes(x = "Sample", y = Total)) +
+  geom_boxplot(fill = "lightgray", color = "black") +
+  labs(y = NULL, x = "Total read counts") +
+  ggtitle("B") +
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        panel.background = element_blank())
+
+# create the diff boxplot
+box_plot_diff <- ggplot(data, aes(x = "Sample", y = Percentage_diff_median)) +
+  geom_boxplot(fill = "lightgray", color = "black") +
+  labs(y = NULL, x = "% difference from the Median") +
+  ggtitle("C") +
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        panel.background = element_blank())
+
+# Combine plots using gridExtra
+combined_plot <- grid.arrange(bar_plot, box_plot, box_plot_diff, nrow = 1, ncol = 3, widths = c(4, 1.4, 1))
+
+cat("Legend:\n\tA,B Total read counts\n\tC: Boxplot of count difference from the median\n")
+cat("\n")
+cat(paste("Sample count: ", nrow(data), "\n"))
+cat(paste("Total read count: ", sum(data$Total), "\n"))
+cat(paste("Median read count: ", median_count), "\n")
+cat(paste("mean %Difference from median (Absolute Value):", mean_diff_median, "%"))
+
+
+} else if (center == "mean"){
+# based on mean
+mean_count <- round(mean(data$Total),0)
+data$Count_diff_mean <- data$Total - mean_count
+data$Percentage_diff_mean <- (data$Count_diff_mean / mean_count) * 100
+mean_diff_mean <- round(100*sum(abs(data$Count_diff_mean))/sum(data$Total),2)
+
+# Create a barplot using ggplot2
+bar_plot <- ggplot(data, aes(x = Sample, y = Total)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = NULL, y = "Total read counts") +
+  ggtitle("A") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_flip(ylim = c(0, max(data$Total)))
+
+# Create a boxplot using ggplot2
+box_plot <- ggplot(data, aes(x = "Sample", y = Total)) +
+  geom_boxplot(fill = "lightgray", color = "black") +
+  labs(y = NULL, x = "Total read counts") +
+  ggtitle("B") +
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        panel.background = element_blank())
+
+# create the diff boxplot
+box_plot_diff <- ggplot(data, aes(x = "Sample", y = Percentage_diff_mean)) +
+  geom_boxplot(fill = "lightgray", color = "black") +
+  labs(y = NULL, x = "% difference from the Mean") +
+  ggtitle("C") +
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        panel.background = element_blank())
+
+# Combine plots using gridExtra
+combined_plot <- grid.arrange(bar_plot, box_plot, box_plot_diff, nrow = 1, ncol = 3, widths = c(4, 1.4, 1))
+
+cat("Legend:\n\tA,B Total read counts\n\tC: Boxplot of count difference from the mean\n")
+cat("\n")
+cat(paste("Sample count: ", nrow(data), "\n"))
+cat(paste("Total read count: ", sum(data$Total), "\n"))
+cat(paste("Mean read count: ", mean_count), "\n")
+cat(paste("mean %Difference from mean (Absolute Value):", mean_diff_mean, "%"))
+
+} else {
+  cat("# center mode not valid")
+}
+
+```

@@ -7,7 +7,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 # script: basic_demux_QC.Rmd
 # SP@NC; 2023-07-13 v1.0
-# find the latest version at 
+# find the latest version at https://github.com/Nucleomics-VIB/plotting-tools/tree/master/basic_demux_QC
 library("knitr")
 library("readr")
 library("ggplot2")

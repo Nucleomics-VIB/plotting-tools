@@ -1,3 +1,6 @@
+# based on script: basic_demux_QC.Rmd
+# SP@NC; 2023-07-14 v1.0
+
 library("shiny")
 library("shinyBS")
 library("readr")
